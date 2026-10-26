@@ -1,0 +1,80 @@
+name: Shadow Operator Micro-Creator Discovery Agent
+
+on:
+  schedule:
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+    inputs:
+      niche_keywords:
+        description: "Target 'Boring / High-Utility' Niche Keywords"
+        required: true
+        default: "excel automation pottery sourdough cad 3d printing bonsai notion acoustics mobility"
+        type: string
+      min_followers:
+        description: "Minimum Follower Count (Iman Gadzhi Sweet Spot: 10,000)"
+        required: true
+        default: "10000"
+        type: string
+      max_followers:
+        description: "Maximum Follower Count (Iman Gadzhi Sweet Spot: 100,000)"
+        required: true
+        default: "100000"
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  discover-and-rank-creators:
+    name: Run 6-Algorithm Shadow Operator Pipeline
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set Up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Scientific Computing Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy pandas scipy
+
+      - name: Run 5-Stage Diagnostic Self-Test Suite
+        run: |
+          python3 micro_creator_agent.py --self-test
+
+      - name: Execute Micro-Creator Discovery & Monte Carlo Simulation
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: |
+          NICHE="${{ github.event.inputs.niche_keywords || 'excel automation pottery sourdough cad 3d printing bonsai notion acoustics mobility leathercraft homelab' }}"
+          MIN_F="${{ github.event.inputs.min_followers || '10000' }}"
+          MAX_F="${{ github.event.inputs.max_followers || '100000' }}"
+          python3 micro_creator_agent.py \
+            --niche "$NICHE" \
+            --min-followers "$MIN_F" \
+            --max-followers "$MAX_F" \
+            --output-csv sample_creators_report.csv \
+            --output-json ranked_creators_full.json
+
+      - name: Upload Ranked Micro-Creator Reports as Downloadable Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: shadow-operator-creator-prospects-${{ github.run_number }}
+          path: |
+            sample_creators_report.csv
+            ranked_creators_full.json
+          retention-days: 30
+
+      - name: Commit & Push Updated Prospect Report to Repository
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add sample_creators_report.csv
+          git diff --staged --quiet || git commit -m "chore(prospects): auto-update ranked micro-creator report [skip ci]"
+          git push
